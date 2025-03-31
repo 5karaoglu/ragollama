@@ -14,6 +14,8 @@ import time
 import re
 import logging
 from datetime import datetime
+from fastapi import BackgroundTasks
+import pynvml
 
 app = FastAPI(title="RAG SQL Uygulaması")
 
@@ -44,7 +46,7 @@ logger.addHandler(console_handler)
 
 # Sabit yapılandırmalar
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-MODEL_NAME = "deepseek-r1:14b-qwen-distill-q4_K_M"  # DeepSeek-R1-Distill-Qwen-14B 4-bit quantization modeli
+MODEL_NAME = "deepseek-r1:14b-qwen-distill-q5_K_M"  # DeepSeek-R1-Distill-Qwen-14B 5-bit quantization modeli
 CACHE_DIR = Path("./cache")
 VECTOR_STORE_DIR = Path("./chroma_db")
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
@@ -59,6 +61,19 @@ class Query(BaseModel):
     question: str
 
 class QueryResponse(BaseModel):
+    question: str
+    answer: str
+    context: str
+    think: str
+    model_name: str
+    input_tokens: int
+    output_tokens: int
+    response_time: float
+
+class BatchQuery(BaseModel):
+    questions: List[str]
+
+class BatchQueryResponse(BaseModel):
     question: str
     answer: str
     context: str
@@ -127,12 +142,13 @@ def create_llm():
         temperature=0.1,
         num_ctx=8192,
         num_gpu=1,
-        num_thread=8,
+        num_thread=32,  # RTX 4090 için thread sayısını artır
         repeat_penalty=1.1,
         top_k=10,
         top_p=0.7,
         tfs_z=1,
-        num_predict=4096
+        num_predict=4096,
+        gpu_layers=35  # GPU'da işlenecek katman sayısı
     )
 
 def load_or_create_llm():
@@ -371,4 +387,115 @@ Soruyu yanıtla. Yanıt:
 @app.get("/")
 async def root():
     """Ana sayfa"""
-    return {"message": "RAG SQL Uygulamasına Hoş Geldiniz!"} 
+    return {"message": "RAG SQL Uygulamasına Hoş Geldiniz!"}
+
+async def process_query(question: str) -> BatchQueryResponse:
+    """Tek bir sorguyu işler"""
+    try:
+        start_time = time.time()
+        
+        # Vektör veritabanı araması
+        relevant_docs = vector_store.similarity_search(question, k=3)
+        context = "\n".join([doc.page_content for doc in relevant_docs])
+        
+        # Prompt oluştur
+        prompt = f"""Veri seti:
+{context}
+
+Soru: {question}
+
+Lütfen bu soruyu yanıtla. Veri setini analiz et ve soruyu doğru bir şekilde yanıtla.
+
+<think>
+1. Veri setinin yapısını analiz et
+2. Hangi alanları kullanmam gerekiyor?
+3. Nasıl bir analiz yapmalıyım?
+4. Sonuçları nasıl doğrulamalıyım?
+</think>
+
+<result>
+Soruyu yanıtla. Yanıt:
+- Anlaşılır olmalı
+- Sayısal değerler varsa formatlanmış olmalı
+- Gerekirse açıklama içermeli
+</result>"""
+
+        # LLM'den yanıt al
+        response = llm(prompt)
+        
+        # Yanıtı parçalara ayır
+        think_content = ""
+        if "<think>" in response:
+            think_start = response.find("<think>") + len("<think>")
+            think_end = response.find("</think>")
+            if think_end == -1:
+                think_end = len(response)
+            think_content = response[think_start:think_end].strip()
+        
+        result_match = re.search(r'<result>(.*?)</result>', response, re.DOTALL)
+        result_content = result_match.group(1).strip() if result_match else ""
+        
+        if not result_content:
+            response_without_think = re.sub(r'<think>.*?(?:</think>)?', '', response, flags=re.DOTALL)
+            result_content = response_without_think.strip()
+        
+        # Token sayılarını hesapla
+        input_tokens = len(prompt.split())
+        output_tokens = len(response.split())
+        
+        # Yanıt süresini hesapla
+        response_time = time.time() - start_time
+        
+        return BatchQueryResponse(
+            question=question,
+            answer=result_content,
+            context=context,
+            think=think_content,
+            model_name=MODEL_NAME,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            response_time=response_time
+        )
+        
+    except Exception as e:
+        logger.error(f"Sorgu işleme hatası: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/batch_query", response_model=List[BatchQueryResponse])
+async def batch_query(questions: BatchQuery, background_tasks: BackgroundTasks):
+    """Toplu sorgu işleme endpoint'i"""
+    try:
+        responses = []
+        for question in questions.questions:
+            response = await process_query(question)
+            responses.append(response)
+        return responses
+    except Exception as e:
+        logger.error(f"Toplu sorgu işleme hatası: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+def get_gpu_memory_info() -> Dict[str, float]:
+    """GPU memory kullanım bilgisini döndürür"""
+    try:
+        pynvml.nvmlInit()
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+        return {
+            "total_memory_mb": info.total / 1024**2,
+            "used_memory_mb": info.used / 1024**2,
+            "free_memory_mb": info.free / 1024**2,
+            "memory_usage_percent": (info.used / info.total) * 100
+        }
+    except Exception as e:
+        logger.error(f"GPU memory bilgisi alınamadı: {str(e)}")
+        return {
+            "total_memory_mb": 0,
+            "used_memory_mb": 0,
+            "free_memory_mb": 0,
+            "memory_usage_percent": 0
+        }
+
+@app.get("/gpu_status")
+async def gpu_status():
+    """GPU durumunu döndüren endpoint"""
+    return get_gpu_memory_info() 

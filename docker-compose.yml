@@ -12,6 +12,7 @@ services:
     environment:
       - OLLAMA_HOST=http://ollama:11434
       - TZ=Europe/Istanbul
+      - CUDA_VISIBLE_DEVICES=0
     restart: unless-stopped
     depends_on:
       - ollama

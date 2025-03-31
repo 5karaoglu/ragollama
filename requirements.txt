@@ -5,4 +5,5 @@ langchain==0.1.5
 langchain-community>=0.0.17
 chromadb==0.4.22
 pydantic==2.6.1
-sentence-transformers==2.5.1 
+sentence-transformers==2.5.1
+pynvml==11.5.0 
