@@ -16,7 +16,7 @@ app = FastAPI(title="RAG SQL Uygulaması")
 
 # Sabit yapılandırmalar
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-MODEL_NAME = "unsloth/DeepSeek-R1-Distill-Qwen-14B-unsloth-bnb-4bit"
+MODEL_NAME = "deepseek-r1:14b-4bit"  # DeepSeek-R1-Distill-Qwen-14B 4-bit quantization modeli
 CACHE_DIR = Path("./cache")
 VECTOR_STORE_DIR = Path("./chroma_db")
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
