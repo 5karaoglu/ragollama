@@ -142,13 +142,16 @@ def create_llm():
         temperature=0.1,
         num_ctx=8192,
         num_gpu=1,
-        num_thread=32,  # RTX 4090 için thread sayısını artır
+        num_thread=32,
         repeat_penalty=1.1,
         top_k=10,
         top_p=0.7,
         tfs_z=1,
         num_predict=4096,
-        gpu_layers=35  # GPU'da işlenecek katman sayısı
+        gpu_layers=50,  # GPU katman sayısını artır
+        gpu_offload=True,  # GPU offload'u aktif et
+        gpu_offload_kv=True,  # KV cache'i GPU'ya taşı
+        gpu_offload_quant=True  # Quantized modelleri GPU'ya taşı
     )
 
 def load_or_create_llm():
@@ -498,4 +501,36 @@ def get_gpu_memory_info() -> Dict[str, float]:
 @app.get("/gpu_status")
 async def gpu_status():
     """GPU durumunu döndüren endpoint"""
-    return get_gpu_memory_info() 
+    return get_gpu_memory_info()
+
+@app.get("/test_gpu")
+async def test_gpu():
+    """GPU kullanımını test eden endpoint"""
+    try:
+        start_time = time.time()
+        
+        # Basit bir prompt ile test
+        test_prompt = "Merhaba, bu bir test mesajıdır."
+        
+        # LLM'den yanıt al
+        response = llm(test_prompt)
+        
+        # GPU memory kullanımını kontrol et
+        gpu_info = get_gpu_memory_info()
+        
+        # Yanıt süresini hesapla
+        response_time = time.time() - start_time
+        
+        return {
+            "status": "success",
+            "response": response,
+            "response_time": response_time,
+            "gpu_memory_usage": gpu_info,
+            "model_name": MODEL_NAME
+        }
+    except Exception as e:
+        logger.error(f"GPU test hatası: {str(e)}", exc_info=True)
+        return {
+            "status": "error",
+            "error": str(e)
+        } 
