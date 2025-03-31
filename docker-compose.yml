@@ -53,6 +53,7 @@ services:
       - OLLAMA_MAX_LOADED_MODELS=5
       - OLLAMA_LOAD_TIMEOUT=0
       - OLLAMA_NOHISTORY=0
+      - gpus=all
     deploy:
       resources:
         reservations:
