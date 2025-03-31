@@ -208,54 +208,6 @@ def initialize_rag():
         )
         vector_store.persist()
 
-def process_query(question: str, context: str) -> str:
-    """Kullanıcı sorusunu işler ve yanıt üretir"""
-    prompt = f"""Veri seti:
-{context}
-
-Soru: {question}
-
-Lütfen bu soruyu yanıtlamak için bir SQL sorgusu oluştur. Sorgu JSON verisini analiz etmeli ve soruyu yanıtlamalı.
-
-<think>
-1. Veri setinin yapısını analiz et:
-   - Hangi alanlar mevcut?
-   - Veri tipleri neler?
-   - İlişkiler neler?
-
-2. Hangi alanları kullanmam gerekiyor?
-   - Soru için gerekli alanlar
-   - Filtreleme için kullanılacak alanlar
-   - Gruplama için kullanılacak alanlar
-
-3. Nasıl bir SQL sorgusu oluşturmalıyım?
-   - Hangi SQL komutlarını kullanmalıyım?
-   - Nasıl bir filtreleme yapmalıyım?
-   - Nasıl bir gruplama yapmalıyım?
-   - Sonuçları nasıl sıralamalıyım?
-
-4. Sonuçları nasıl doğrulamalıyım?
-   - Mantıksal kontroller
-   - Veri tutarlılığı kontrolleri
-</think>
-
-<sql>
-SQL sorgusunu buraya yaz. Sorgu:
-- JSON verisini doğru şekilde analiz etmeli
-- Gerekli filtrelemeleri yapmalı
-- Doğru gruplamaları içermeli
-- Sonuçları uygun şekilde sıralamalı
-</sql>
-
-<result>
-Sorgu sonucunu buraya yaz. Sonuç:
-- Anlaşılır olmalı
-- Sayısal değerler varsa formatlanmış olmalı
-- Gerekirse açıklama içermeli
-</result>"""
-
-    return llm.predict(prompt)
-
 @app.on_event("startup")
 async def startup_event():
     """Uygulama başlatıldığında RAG sistemini başlatır"""
