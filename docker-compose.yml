@@ -33,7 +33,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     environment:
-      - CUDA_VISIBLE_DEVICES=GPU-5959260f-d959-6cd3-883c-e268ac34c2cb,GPU-319b7d6f-624b-7a29-b063-2403d24f482d
+      - CUDA_VISIBLE_DEVICES=0
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
       - OLLAMA_HOST=0.0.0.0:11435
@@ -49,7 +49,7 @@ services:
       - GGML_CUDA_FORCE_CUBLAS=1
       - GGML_CUDA_DMMV_X=32
       - GGML_CUDA_DMMV_Y=32
-      - GGML_CUDA_MAX_DEVICES=2
+      - GGML_CUDA_MAX_DEVICES=1
       - GGML_CUDA_USE_PINNED=1
       - GGML_CUDA_USE_TENSOR_CORES=1
       - OLLAMA_ORIGINS=*
@@ -61,6 +61,8 @@ services:
       - OLLAMA_LOAD_TIMEOUT=0
       - OLLAMA_NOHISTORY=0
       - gpus=all
+    command: >
+      sh -c "curl https://ollama.ai/install.sh | sh && ollama serve"
     deploy:
       resources:
         reservations:
