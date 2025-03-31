@@ -101,7 +101,16 @@ def load_or_create_llm():
                 llm = Ollama(
                     base_url=OLLAMA_HOST,
                     model=MODEL_NAME,
-                    temperature=0.1
+                    temperature=0.1,
+                    num_ctx=8192,
+                    num_gpu=1,
+                    num_thread=8,
+                    repeat_penalty=1.1,
+                    top_k=10,
+                    top_p=0.7,
+                    tfs_z=1,
+                    num_predict=2048,
+                    stop=["</think>", "</sql>", "</result>"]
                 )
                 return llm
     
@@ -121,7 +130,16 @@ def load_or_create_llm():
     llm = Ollama(
         base_url=OLLAMA_HOST,
         model=MODEL_NAME,
-        temperature=0.1
+        temperature=0.1,
+        num_ctx=8192,
+        num_gpu=1,
+        num_thread=8,
+        repeat_penalty=1.1,
+        top_k=10,
+        top_p=0.7,
+        tfs_z=1,
+        num_predict=2048,
+        stop=["</think>", "</sql>", "</result>"]
     )
     return llm
 
@@ -192,14 +210,49 @@ def initialize_rag():
 
 def process_query(question: str, context: str) -> str:
     """Kullanıcı sorusunu işler ve yanıt üretir"""
-    prompt = f"""Aşağıdaki veri seti ve soru için yanıt oluştur:
-
-Veri Seti:
+    prompt = f"""Veri seti:
 {context}
 
 Soru: {question}
 
-Lütfen soruya uygun, doğru ve anlaşılır bir yanıt ver. Eğer veri setinde yeterli bilgi yoksa, bunu belirt."""
+Lütfen bu soruyu yanıtlamak için bir SQL sorgusu oluştur. Sorgu JSON verisini analiz etmeli ve soruyu yanıtlamalı.
+
+<think>
+1. Veri setinin yapısını analiz et:
+   - Hangi alanlar mevcut?
+   - Veri tipleri neler?
+   - İlişkiler neler?
+
+2. Hangi alanları kullanmam gerekiyor?
+   - Soru için gerekli alanlar
+   - Filtreleme için kullanılacak alanlar
+   - Gruplama için kullanılacak alanlar
+
+3. Nasıl bir SQL sorgusu oluşturmalıyım?
+   - Hangi SQL komutlarını kullanmalıyım?
+   - Nasıl bir filtreleme yapmalıyım?
+   - Nasıl bir gruplama yapmalıyım?
+   - Sonuçları nasıl sıralamalıyım?
+
+4. Sonuçları nasıl doğrulamalıyım?
+   - Mantıksal kontroller
+   - Veri tutarlılığı kontrolleri
+</think>
+
+<sql>
+SQL sorgusunu buraya yaz. Sorgu:
+- JSON verisini doğru şekilde analiz etmeli
+- Gerekli filtrelemeleri yapmalı
+- Doğru gruplamaları içermeli
+- Sonuçları uygun şekilde sıralamalı
+</sql>
+
+<result>
+Sorgu sonucunu buraya yaz. Sonuç:
+- Anlaşılır olmalı
+- Sayısal değerler varsa formatlanmış olmalı
+- Gerekirse açıklama içermeli
+</result>"""
 
     return llm.predict(prompt)
 
@@ -240,17 +293,40 @@ Soru: {question.question}
 Lütfen bu soruyu yanıtlamak için bir SQL sorgusu oluştur. Sorgu JSON verisini analiz etmeli ve soruyu yanıtlamalı.
 
 <think>
-1. Veri setinin yapısını analiz et
+1. Veri setinin yapısını analiz et:
+   - Hangi alanlar mevcut?
+   - Veri tipleri neler?
+   - İlişkiler neler?
+
 2. Hangi alanları kullanmam gerekiyor?
+   - Soru için gerekli alanlar
+   - Filtreleme için kullanılacak alanlar
+   - Gruplama için kullanılacak alanlar
+
 3. Nasıl bir SQL sorgusu oluşturmalıyım?
+   - Hangi SQL komutlarını kullanmalıyım?
+   - Nasıl bir filtreleme yapmalıyım?
+   - Nasıl bir gruplama yapmalıyım?
+   - Sonuçları nasıl sıralamalıyım?
+
+4. Sonuçları nasıl doğrulamalıyım?
+   - Mantıksal kontroller
+   - Veri tutarlılığı kontrolleri
 </think>
 
 <sql>
-SQL sorgusunu buraya yaz
+SQL sorgusunu buraya yaz. Sorgu:
+- JSON verisini doğru şekilde analiz etmeli
+- Gerekli filtrelemeleri yapmalı
+- Doğru gruplamaları içermeli
+- Sonuçları uygun şekilde sıralamalı
 </sql>
 
 <result>
-Sorgu sonucunu buraya yaz
+Sorgu sonucunu buraya yaz. Sonuç:
+- Anlaşılır olmalı
+- Sayısal değerler varsa formatlanmış olmalı
+- Gerekirse açıklama içermeli
 </result>"""
 
         # LLM'den yanıt al
