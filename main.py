@@ -11,6 +11,7 @@ import pickle
 from pathlib import Path
 import subprocess
 import time
+import re
 
 app = FastAPI(title="RAG SQL Uygulaması")
 
@@ -29,6 +30,12 @@ VECTOR_STORE_DIR.mkdir(exist_ok=True)
 # Veri yapıları
 class Query(BaseModel):
     question: str
+
+class QueryResponse(BaseModel):
+    question: str
+    answer: str
+    context: str
+    think: str  # Yeni eklenen alan
 
 # Global değişkenler
 vector_store = None
@@ -197,25 +204,100 @@ async def startup_event():
     """Uygulama başlatıldığında RAG sistemini başlatır"""
     initialize_rag()
 
-@app.post("/query")
-async def query_endpoint(query: Query):
-    """Kullanıcı sorgusunu işler ve yanıt üretir"""
+@app.post("/query", response_model=QueryResponse)
+async def query(question: Query):
     try:
-        # Benzer dokümanları bul
-        docs = vector_store.similarity_search(query.question, k=3)
+        # Veri setini oku
+        with open("Book1.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
         
-        # Context'i hazırla
-        context = "\n".join([doc.page_content for doc in docs])
+        # Veriyi metin formatına dönüştür
+        text_data = json.dumps(data, ensure_ascii=False, indent=2)
         
-        # Yanıtı oluştur
-        response = process_query(query.question, context)
+        # Metni parçalara ayır
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len,
+            separators=["\n\n", "\n", " ", ""]
+        )
+        chunks = text_splitter.split_text(text_data)
         
-        return {
-            "question": query.question,
-            "answer": response.strip(),
-            "context": context
-        }
-    
+        # Embedding modelini yükle
+        embeddings = HuggingFaceEmbeddings(
+            model_name=EMBEDDING_MODEL_NAME,
+            model_kwargs={'device': 'cuda'},
+            encode_kwargs={'normalize_embeddings': True}
+        )
+        
+        # Vektör veritabanını oluştur
+        vectorstore = Chroma.from_texts(
+            texts=chunks,
+            embedding=embeddings,
+            persist_directory=str(VECTOR_STORE_DIR)
+        )
+        
+        # En alakalı parçaları bul
+        relevant_docs = vectorstore.similarity_search(question.question, k=3)
+        context = "\n".join([doc.page_content for doc in relevant_docs])
+        
+        # LLM modelini yükle
+        llm = Ollama(
+            base_url=OLLAMA_HOST,
+            model=MODEL_NAME,
+            temperature=0.1,
+            num_ctx=4096,
+            num_gpu=1,
+            num_thread=8,
+            repeat_penalty=1.1,
+            top_k=10,
+            top_p=0.7,
+            tfs_z=1,
+            num_predict=512,
+            stop=["</think>", "</sql>", "</result>"]
+        )
+        
+        # Prompt oluştur
+        prompt = f"""Veri seti:
+{context}
+
+Soru: {question.question}
+
+Lütfen bu soruyu yanıtlamak için bir SQL sorgusu oluştur. Sorgu JSON verisini analiz etmeli ve soruyu yanıtlamalı.
+
+<think>
+1. Veri setinin yapısını analiz et
+2. Hangi alanları kullanmam gerekiyor?
+3. Nasıl bir SQL sorgusu oluşturmalıyım?
+</think>
+
+<sql>
+SQL sorgusunu buraya yaz
+</sql>
+
+<result>
+Sorgu sonucunu buraya yaz
+</result>"""
+
+        # LLM'den yanıt al
+        response = llm(prompt)
+        
+        # Yanıtı parçalara ayır
+        think_match = re.search(r'<think>(.*?)</think>', response, re.DOTALL)
+        sql_match = re.search(r'<sql>(.*?)</sql>', response, re.DOTALL)
+        result_match = re.search(r'<result>(.*?)</result>', response, re.DOTALL)
+        
+        think_content = think_match.group(1).strip() if think_match else ""
+        sql_content = sql_match.group(1).strip() if sql_match else ""
+        result_content = result_match.group(1).strip() if result_match else ""
+        
+        return QueryResponse(
+            question=question.question,
+            answer=result_content,
+            context=context,
+            think=think_content  # Think tag'i içindeki değerleri döndür
+        )
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
