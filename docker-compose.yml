@@ -12,7 +12,7 @@ services:
     environment:
       - OLLAMA_HOST=http://ollama:11434
       - TZ=Europe/Istanbul
-      - CUDA_VISIBLE_DEVICES=0
+      - CUDA_VISIBLE_DEVICES=0,1
     restart: unless-stopped
     depends_on:
       - ollama
@@ -21,7 +21,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: 2
               capabilities: [gpu]
     networks:
       - ragollama_network
@@ -33,15 +33,17 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     environment:
-      - CUDA_VISIBLE_DEVICES=0
+      - CUDA_VISIBLE_DEVICES=0,1
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODELS=/root/.ollama
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: 2
               capabilities: [gpu]
     restart: unless-stopped
     networks:

@@ -141,7 +141,7 @@ def create_llm():
         model=MODEL_NAME,
         temperature=0.1,
         num_ctx=8192,
-        num_gpu=1,
+        num_gpu=2,
         num_thread=32,
         repeat_penalty=1.1,
         top_k=10,
