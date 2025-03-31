@@ -46,7 +46,7 @@ logger.addHandler(console_handler)
 
 # Sabit yapılandırmalar
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-MODEL_NAME = "deepseek-r1:14b-qwen-distill-q4_K_M"  # DeepSeek-R1-Distill-Qwen-14B 4-bit quantization modeli
+MODEL_NAME = "deepseek-r1:8b-llama-distill-q4_K_M"  # DeepSeek-R1-Distill-Llama-8B 4-bit quantization modeli
 CACHE_DIR = Path("./cache")
 VECTOR_STORE_DIR = Path("./chroma_db")
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
