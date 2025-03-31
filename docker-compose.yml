@@ -15,6 +15,13 @@ services:
     restart: unless-stopped
     depends_on:
       - ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - ragollama_network
 
