@@ -147,13 +147,7 @@ def create_llm():
         top_k=10,
         top_p=0.7,
         tfs_z=1,
-        num_predict=4096,
-        gpu_layers=75,  # GPU katman sayısını artır
-        gpu_offload=True,  # GPU offload'u aktif et
-        gpu_offload_kv=True,  # KV cache'i GPU'ya taşı
-        gpu_offload_quant=True,  # Quantized modelleri GPU'ya taşı
-        gpu_memory_fraction=0.8,  # GPU memory kullanım oranını artır
-        gpu_memory_utilization=0.8  # GPU memory kullanım verimliliğini artır
+        num_predict=4096
     )
 
 def load_or_create_llm():
