@@ -10,7 +10,7 @@ services:
       - cache_data:/app/cache
       - vector_store_data:/app/chroma_db
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_HOST=http://ollama:11435
       - TZ=Europe/Istanbul
       - CUDA_VISIBLE_DEVICES=0,1
     restart: unless-stopped
@@ -27,16 +27,16 @@ services:
       - ragollama_network
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama-cuda:latest
     ports:
-      - "11434:11434"
+      - "11435:11435"
     volumes:
       - ollama_data:/root/.ollama
     environment:
       - CUDA_VISIBLE_DEVICES=0,1
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_HOST=0.0.0.0:11435
       - OLLAMA_MODELS=/root/.ollama
       - OLLAMA_NUM_GPU_LAYERS=9999
       - OLLAMA_FLASH_ATTENTION=1
@@ -45,6 +45,9 @@ services:
       - OLLAMA_GPUSPLIT="48,48"
       - OLLAMA_CONTEXT_LENGTH=131072
       - GGML_CUDA_ENABLE_UNIFIED_MEMORY=1
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_KEEP_ALIVE=5m
+      - OLLAMA_DEBUG=1
     deploy:
       resources:
         reservations:
