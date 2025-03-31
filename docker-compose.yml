@@ -38,11 +38,12 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=all
       - OLLAMA_HOST=0.0.0.0
       - OLLAMA_MODELS=/root/.ollama
-      - OLLAMA_NUM_GPU_LAYERS=9999
+      - OLLAMA_NUM_GPU_LAYERS=49
       - OLLAMA_FLASH_ATTENTION=1
-      - OLLAMA_BATCH_SIZE=8192
-      - OLLAMA_GPUMEMORY=24000MB
+      - OLLAMA_BATCH_SIZE=4096
+      - OLLAMA_GPUMEMORY=48000MB
       - OLLAMA_GPUSPLIT="24,24"
+      - OLLAMA_CONTEXT_LENGTH=65536
     deploy:
       resources:
         reservations:
