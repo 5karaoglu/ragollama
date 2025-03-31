@@ -11,8 +11,12 @@ services:
       - vector_store_data:/app/chroma_db
     environment:
       - OLLAMA_HOST=http://ollama:11434
+      - TZ=Europe/Istanbul
+    restart: unless-stopped
     depends_on:
       - ollama
+    networks:
+      - ragollama_network
 
   ollama:
     image: ollama/ollama:latest
@@ -27,6 +31,13 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - ragollama_network
+
+networks:
+  ragollama_network:
+    driver: bridge
 
 volumes:
   ollama_data:
