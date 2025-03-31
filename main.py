@@ -140,8 +140,7 @@ def load_or_create_llm():
                     top_k=10,
                     top_p=0.7,
                     tfs_z=1,
-                    num_predict=2048,
-                    stop=["</think>", "</sql>", "</result>"]
+                    num_predict=4096
                 )
                 return llm
     
@@ -169,8 +168,7 @@ def load_or_create_llm():
         top_k=10,
         top_p=0.7,
         tfs_z=1,
-        num_predict=2048,
-        stop=["</think>", "</sql>", "</result>"]
+        num_predict=4096
     )
     return llm
 
