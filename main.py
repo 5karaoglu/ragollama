@@ -315,17 +315,25 @@ Soruyu yanıtla. Yanıt:
         logger.info(f"LLM Ham Yanıt:\n{response}")
         
         # Yanıtı parçalara ayır
-        think_match = re.search(r'<think>(.*?)</think>', response, re.DOTALL)
-        result_match = re.search(r'<result>(.*?)</result>', response, re.DOTALL)
+        # Think içeriğini al - </think> tag'ı yoksa sonuna kadar al
+        if "<think>" in response:
+            think_start = response.find("<think>") + len("<think>")
+            think_end = response.find("</think>")
+            if think_end == -1:  # </think> tag'ı bulunamadıysa
+                think_end = len(response)
+            think_content = response[think_start:think_end].strip()
+        else:
+            think_content = ""
         
-        think_content = think_match.group(1).strip() if think_match else ""
+        # Result içeriğini al
+        result_match = re.search(r'<result>(.*?)</result>', response, re.DOTALL)
         result_content = result_match.group(1).strip() if result_match else ""
         
         # Eğer <result> tag'ı yoksa, <think> tag'ı dışındaki içeriği cevap olarak kullan
         if not result_content:
             logger.info("<result> tag'ı bulunamadı, <think> tag'ı dışındaki içerik cevap olarak kullanılacak")
             # <think> tag'ı ve içeriğini kaldır
-            response_without_think = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+            response_without_think = re.sub(r'<think>.*?(?:</think>)?', '', response, flags=re.DOTALL)
             # Kalan içeriği temizle ve cevap olarak kullan
             result_content = response_without_think.strip()
         
@@ -335,10 +343,6 @@ Soruyu yanıtla. Yanıt:
             logger.error(f"Think içeriği: {bool(think_content)}")
             logger.error(f"Ham yanıt uzunluğu: {len(response)}")
             logger.error(f"Yanıt içeriği:\n{response}")
-            
-            # Eksik etiketleri tamamla
-            if "<think>" in response:
-                think_content = response.split("</think>")[0].replace("<think>", "").strip()
             
             # Hala eksik varsa hata fırlat
             if not think_content:
