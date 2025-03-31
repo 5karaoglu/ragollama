@@ -503,25 +503,37 @@ def get_gpu_memory_info() -> Dict[str, float]:
 @app.get("/gpu_status")
 async def gpu_status():
     """GPU durumunu döndüren endpoint"""
-    return get_gpu_memory_info()
+    try:
+        logger.info("GPU durumu endpoint'i çağrıldı")
+        gpu_info = get_gpu_memory_info()
+        logger.info(f"GPU bilgileri: {gpu_info}")
+        return gpu_info
+    except Exception as e:
+        logger.error(f"GPU durumu alınamadı: {str(e)}")
+        return {"error": str(e)}
 
 @app.get("/test_gpu")
 async def test_gpu():
     """GPU kullanımını test eden endpoint"""
     try:
+        logger.info("GPU test endpoint'i çağrıldı")
         start_time = time.time()
         
         # Basit bir prompt ile test
         test_prompt = "Merhaba, bu bir test mesajıdır."
+        logger.info(f"Test promptu: {test_prompt}")
         
         # LLM'den yanıt al
         response = llm(test_prompt)
+        logger.info(f"LLM yanıtı: {response}")
         
         # GPU memory kullanımını kontrol et
         gpu_info = get_gpu_memory_info()
+        logger.info(f"GPU bilgileri: {gpu_info}")
         
         # Yanıt süresini hesapla
         response_time = time.time() - start_time
+        logger.info(f"Yanıt süresi: {response_time} saniye")
         
         return {
             "status": "success",
