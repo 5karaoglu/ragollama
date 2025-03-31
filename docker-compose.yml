@@ -61,8 +61,6 @@ services:
       - OLLAMA_LOAD_TIMEOUT=0
       - OLLAMA_NOHISTORY=0
       - gpus=all
-    entrypoint: ["/bin/sh", "-c"]
-    command: "curl https://ollama.ai/install.sh | sh && ollama serve"
     deploy:
       resources:
         reservations:
