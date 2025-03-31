@@ -136,7 +136,11 @@ def load_or_create_embeddings():
             embeddings = pickle.load(f)
     else:
         print("Yeni embedding modeli oluşturuluyor...")
-        embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+        embeddings = HuggingFaceEmbeddings(
+            model_name=EMBEDDING_MODEL_NAME,
+            model_kwargs={'device': 'cuda'},
+            encode_kwargs={'normalize_embeddings': True}
+        )
         with open(cache_file, "wb") as f:
             pickle.dump(embeddings, f)
     
