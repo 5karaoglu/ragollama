@@ -227,39 +227,9 @@ async def query(question: Query):
         )
         chunks = text_splitter.split_text(text_data)
         
-        # Embedding modelini yükle
-        embeddings = HuggingFaceEmbeddings(
-            model_name=EMBEDDING_MODEL_NAME,
-            model_kwargs={'device': 'cuda'},
-            encode_kwargs={'normalize_embeddings': True}
-        )
-        
-        # Vektör veritabanını oluştur
-        vectorstore = Chroma.from_texts(
-            texts=chunks,
-            embedding=embeddings,
-            persist_directory=str(VECTOR_STORE_DIR)
-        )
-        
-        # En alakalı parçaları bul
-        relevant_docs = vectorstore.similarity_search(question.question, k=3)
+        # Vektör veritabanını kullan (yeniden oluşturmak yerine)
+        relevant_docs = vector_store.similarity_search(question.question, k=3)
         context = "\n".join([doc.page_content for doc in relevant_docs])
-        
-        # LLM modelini yükle
-        llm = Ollama(
-            base_url=OLLAMA_HOST,
-            model=MODEL_NAME,
-            temperature=0.1,
-            num_ctx=4096,
-            num_gpu=1,
-            num_thread=8,
-            repeat_penalty=1.1,
-            top_k=10,
-            top_p=0.7,
-            tfs_z=1,
-            num_predict=512,
-            stop=["</think>", "</sql>", "</result>"]
-        )
         
         # Prompt oluştur
         prompt = f"""Veri seti:
@@ -299,7 +269,7 @@ Sorgu sonucunu buraya yaz
             question=question.question,
             answer=result_content,
             context=context,
-            think=think_content  # Think tag'i içindeki değerleri döndür
+            think=think_content
         )
         
     except Exception as e:
