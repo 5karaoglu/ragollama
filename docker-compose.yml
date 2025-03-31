@@ -27,7 +27,7 @@ services:
       - ragollama_network
 
   ollama:
-    image: ollama/ollama-cuda:latest
+    image: ollama/ollama:latest
     ports:
       - "11435:11435"
     volumes:
@@ -48,6 +48,11 @@ services:
       - OLLAMA_ORIGINS=*
       - OLLAMA_KEEP_ALIVE=5m
       - OLLAMA_DEBUG=1
+      - OLLAMA_ACCELERATE=1
+      - OLLAMA_NOPRUNE=1
+      - OLLAMA_MAX_LOADED_MODELS=5
+      - OLLAMA_LOAD_TIMEOUT=0
+      - OLLAMA_NOHISTORY=0
     deploy:
       resources:
         reservations:
