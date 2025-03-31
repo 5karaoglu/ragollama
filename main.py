@@ -119,6 +119,22 @@ def pull_model():
         print(f"Model indirme sırasında hata: {e}")
         return False
 
+def create_llm():
+    """LLM modelini oluşturur"""
+    return Ollama(
+        base_url=OLLAMA_HOST,
+        model=MODEL_NAME,
+        temperature=0.1,
+        num_ctx=8192,
+        num_gpu=1,
+        num_thread=8,
+        repeat_penalty=1.1,
+        top_k=10,
+        top_p=0.7,
+        tfs_z=1,
+        num_predict=4096
+    )
+
 def load_or_create_llm():
     """LLM modelini yükler veya indirir"""
     global llm
@@ -129,19 +145,7 @@ def load_or_create_llm():
             cache_data = json.load(f)
             if cache_data.get("model_name") == MODEL_NAME and cache_data.get("last_check", 0) > time.time() - 3600:  # 1 saat
                 print("Model cache'den yükleniyor...")
-                llm = Ollama(
-                    base_url=OLLAMA_HOST,
-                    model=MODEL_NAME,
-                    temperature=0.1,
-                    num_ctx=8192,
-                    num_gpu=1,
-                    num_thread=8,
-                    repeat_penalty=1.1,
-                    top_k=10,
-                    top_p=0.7,
-                    tfs_z=1,
-                    num_predict=4096
-                )
+                llm = create_llm()
                 return llm
     
     # Model yüklü değilse indir
@@ -157,19 +161,7 @@ def load_or_create_llm():
         }, f)
     
     # LLM'i başlat
-    llm = Ollama(
-        base_url=OLLAMA_HOST,
-        model=MODEL_NAME,
-        temperature=0.1,
-        num_ctx=8192,
-        num_gpu=1,
-        num_thread=8,
-        repeat_penalty=1.1,
-        top_k=10,
-        top_p=0.7,
-        tfs_z=1,
-        num_predict=4096
-    )
+    llm = create_llm()
     return llm
 
 def load_or_create_embeddings():
