@@ -62,7 +62,11 @@ class QueryResponse(BaseModel):
     question: str
     answer: str
     context: str
-    think: str  # Yeni eklenen alan
+    think: str
+    model_name: str
+    input_tokens: int
+    output_tokens: int
+    response_time: float
 
 # Global değişkenler
 vector_store = None
@@ -244,6 +248,7 @@ async def startup_event():
 async def query(question: Query):
     try:
         logger.info(f"Yeni sorgu alındı: {question.question}")
+        start_time = time.time()
         
         # Veri setini oku
         with open("Book1.json", "r", encoding="utf-8") as f:
@@ -343,11 +348,22 @@ Sorgu sonucunu buraya yaz. Sonuç:
         logger.info(f"SQL Sorgusu:\n{sql_content}")
         logger.info(f"Sonuç:\n{result_content}")
         
+        # Token sayılarını hesapla
+        input_tokens = len(prompt.split())  # Basit bir tahmin
+        output_tokens = len(response.split())  # Basit bir tahmin
+        
+        # Yanıt süresini hesapla
+        response_time = time.time() - start_time
+        
         return QueryResponse(
             question=question.question,
             answer=result_content,
             context=context,
-            think=think_content
+            think=think_content,
+            model_name=MODEL_NAME,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            response_time=response_time
         )
         
     except Exception as e:
