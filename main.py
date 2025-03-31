@@ -315,6 +315,7 @@ Sorgu sonucunu buraya yaz. Sonuç:
         # LLM'den yanıt al
         logger.info("LLM'den yanıt alınıyor...")
         response = llm(prompt)
+        logger.info(f"LLM Ham Yanıt:\n{response}")
         
         # Yanıtı parçalara ayır
         think_match = re.search(r'<think>(.*?)</think>', response, re.DOTALL)
@@ -324,6 +325,17 @@ Sorgu sonucunu buraya yaz. Sonuç:
         think_content = think_match.group(1).strip() if think_match else ""
         sql_content = sql_match.group(1).strip() if sql_match else ""
         result_content = result_match.group(1).strip() if result_match else ""
+        
+        # Boş yanıt kontrolü
+        if not think_content or not sql_content or not result_content:
+            logger.error("LLM'den eksik yanıt alındı")
+            logger.error(f"Think içeriği: {bool(think_content)}")
+            logger.error(f"SQL içeriği: {bool(sql_content)}")
+            logger.error(f"Sonuç içeriği: {bool(result_content)}")
+            raise HTTPException(
+                status_code=500,
+                detail="LLM'den eksik yanıt alındı. Lütfen tekrar deneyin."
+            )
         
         # Yanıtı logla
         logger.info("Yanıt oluşturuldu:")
