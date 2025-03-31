@@ -12,8 +12,35 @@ from pathlib import Path
 import subprocess
 import time
 import re
+import logging
+from datetime import datetime
 
 app = FastAPI(title="RAG SQL Uygulaması")
+
+# Loglama yapılandırması
+LOG_DIR = Path("./logs")
+LOG_DIR.mkdir(exist_ok=True)
+
+# Dosya handler'ı
+file_handler = logging.FileHandler(
+    LOG_DIR / f"ragollama_{datetime.now().strftime('%Y%m%d')}.log",
+    encoding='utf-8'
+)
+file_handler.setFormatter(
+    logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+)
+
+# Konsol handler'ı
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(
+    logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+)
+
+# Logger'ı yapılandır
+logger = logging.getLogger("ragollama")
+logger.setLevel(logging.INFO)
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 # Sabit yapılandırmalar
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -216,6 +243,8 @@ async def startup_event():
 @app.post("/query", response_model=QueryResponse)
 async def query(question: Query):
     try:
+        logger.info(f"Yeni sorgu alındı: {question.question}")
+        
         # Veri setini oku
         with open("Book1.json", "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -235,6 +264,8 @@ async def query(question: Query):
         # Vektör veritabanını kullan (yeniden oluşturmak yerine)
         relevant_docs = vector_store.similarity_search(question.question, k=3)
         context = "\n".join([doc.page_content for doc in relevant_docs])
+        
+        logger.info("İlgili bağlam bulundu")
         
         # Prompt oluştur
         prompt = f"""Veri seti:
@@ -282,6 +313,7 @@ Sorgu sonucunu buraya yaz. Sonuç:
 </result>"""
 
         # LLM'den yanıt al
+        logger.info("LLM'den yanıt alınıyor...")
         response = llm(prompt)
         
         # Yanıtı parçalara ayır
@@ -293,6 +325,12 @@ Sorgu sonucunu buraya yaz. Sonuç:
         sql_content = sql_match.group(1).strip() if sql_match else ""
         result_content = result_match.group(1).strip() if result_match else ""
         
+        # Yanıtı logla
+        logger.info("Yanıt oluşturuldu:")
+        logger.info(f"Düşünce Süreci:\n{think_content}")
+        logger.info(f"SQL Sorgusu:\n{sql_content}")
+        logger.info(f"Sonuç:\n{result_content}")
+        
         return QueryResponse(
             question=question.question,
             answer=result_content,
@@ -301,6 +339,7 @@ Sorgu sonucunu buraya yaz. Sonuç:
         )
         
     except Exception as e:
+        logger.error(f"Hata oluştu: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
