@@ -321,22 +321,27 @@ Soruyu yanıtla. Yanıt:
         think_content = think_match.group(1).strip() if think_match else ""
         result_content = result_match.group(1).strip() if result_match else ""
         
+        # Eğer <result> tag'ı yoksa, <think> tag'ı dışındaki içeriği cevap olarak kullan
+        if not result_content:
+            logger.info("<result> tag'ı bulunamadı, <think> tag'ı dışındaki içerik cevap olarak kullanılacak")
+            # <think> tag'ı ve içeriğini kaldır
+            response_without_think = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+            # Kalan içeriği temizle ve cevap olarak kullan
+            result_content = response_without_think.strip()
+        
         # Boş yanıt kontrolü
-        if not think_content or not result_content:
+        if not think_content:
             logger.error("LLM'den eksik yanıt alındı")
             logger.error(f"Think içeriği: {bool(think_content)}")
-            logger.error(f"Sonuç içeriği: {bool(result_content)}")
             logger.error(f"Ham yanıt uzunluğu: {len(response)}")
             logger.error(f"Yanıt içeriği:\n{response}")
             
             # Eksik etiketleri tamamla
-            if not think_content and "<think>" in response:
+            if "<think>" in response:
                 think_content = response.split("</think>")[0].replace("<think>", "").strip()
-            if not result_content and "<result>" in response:
-                result_content = response.split("</result>")[0].replace("<result>", "").strip()
             
             # Hala eksik varsa hata fırlat
-            if not think_content or not result_content:
+            if not think_content:
                 raise HTTPException(
                     status_code=500,
                     detail="LLM'den eksik yanıt alındı. Lütfen tekrar deneyin."
