@@ -278,7 +278,7 @@ async def query(question: Query):
 
 Soru: {question.question}
 
-Lütfen bu soruyu yanıtlamak için bir SQL sorgusu oluştur. Sorgu JSON verisini analiz etmeli ve soruyu yanıtlamalı.
+Lütfen bu soruyu yanıtla. Veri setini analiz et ve soruyu doğru bir şekilde yanıtla.
 
 <think>
 1. Veri setinin yapısını analiz et:
@@ -291,8 +291,8 @@ Lütfen bu soruyu yanıtlamak için bir SQL sorgusu oluştur. Sorgu JSON verisin
    - Filtreleme için kullanılacak alanlar
    - Gruplama için kullanılacak alanlar
 
-3. Nasıl bir SQL sorgusu oluşturmalıyım?
-   - Hangi SQL komutlarını kullanmalıyım?
+3. Nasıl bir analiz yapmalıyım?
+   - Hangi verileri kullanmalıyım?
    - Nasıl bir filtreleme yapmalıyım?
    - Nasıl bir gruplama yapmalıyım?
    - Sonuçları nasıl sıralamalıyım?
@@ -302,16 +302,8 @@ Lütfen bu soruyu yanıtlamak için bir SQL sorgusu oluştur. Sorgu JSON verisin
    - Veri tutarlılığı kontrolleri
 </think>
 
-<sql>
-SQL sorgusunu buraya yaz. Sorgu:
-- JSON verisini doğru şekilde analiz etmeli
-- Gerekli filtrelemeleri yapmalı
-- Doğru gruplamaları içermeli
-- Sonuçları uygun şekilde sıralamalı
-</sql>
-
 <result>
-Sorgu sonucunu buraya yaz. Sonuç:
+Soruyu yanıtla. Yanıt:
 - Anlaşılır olmalı
 - Sayısal değerler varsa formatlanmış olmalı
 - Gerekirse açıklama içermeli
@@ -324,28 +316,35 @@ Sorgu sonucunu buraya yaz. Sonuç:
         
         # Yanıtı parçalara ayır
         think_match = re.search(r'<think>(.*?)</think>', response, re.DOTALL)
-        sql_match = re.search(r'<sql>(.*?)</sql>', response, re.DOTALL)
         result_match = re.search(r'<result>(.*?)</result>', response, re.DOTALL)
         
         think_content = think_match.group(1).strip() if think_match else ""
-        sql_content = sql_match.group(1).strip() if sql_match else ""
         result_content = result_match.group(1).strip() if result_match else ""
         
         # Boş yanıt kontrolü
-        if not think_content or not sql_content or not result_content:
+        if not think_content or not result_content:
             logger.error("LLM'den eksik yanıt alındı")
             logger.error(f"Think içeriği: {bool(think_content)}")
-            logger.error(f"SQL içeriği: {bool(sql_content)}")
             logger.error(f"Sonuç içeriği: {bool(result_content)}")
-            raise HTTPException(
-                status_code=500,
-                detail="LLM'den eksik yanıt alındı. Lütfen tekrar deneyin."
-            )
+            logger.error(f"Ham yanıt uzunluğu: {len(response)}")
+            logger.error(f"Yanıt içeriği:\n{response}")
+            
+            # Eksik etiketleri tamamla
+            if not think_content and "<think>" in response:
+                think_content = response.split("</think>")[0].replace("<think>", "").strip()
+            if not result_content and "<result>" in response:
+                result_content = response.split("</result>")[0].replace("<result>", "").strip()
+            
+            # Hala eksik varsa hata fırlat
+            if not think_content or not result_content:
+                raise HTTPException(
+                    status_code=500,
+                    detail="LLM'den eksik yanıt alındı. Lütfen tekrar deneyin."
+                )
         
         # Yanıtı logla
         logger.info("Yanıt oluşturuldu:")
         logger.info(f"Düşünce Süreci:\n{think_content}")
-        logger.info(f"SQL Sorgusu:\n{sql_content}")
         logger.info(f"Sonuç:\n{result_content}")
         
         # Token sayılarını hesapla
