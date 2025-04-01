@@ -69,6 +69,9 @@ services:
       - CUDA_CACHE_PATH=/tmp/cuda-cache
       - CUDA_CACHE_MAXSIZE=67108864
       - LD_LIBRARY_PATH=/usr/lib/ollama/cuda_v12:$LD_LIBRARY_PATH
+      - OLLAMA_LOG_LEVEL=debug
+      - OLLAMA_LOG_FORMAT=json
+      - OLLAMA_LOG_FILE=/root/.ollama/ollama.log
     deploy:
       resources:
         reservations:
