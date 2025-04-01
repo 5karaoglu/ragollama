@@ -10,11 +10,11 @@ services:
       - cache_data:/app/cache
       - vector_store_data:/app/chroma_db
     environment:
-      - OLLAMA_HOST=http://ollama:11435
+      - OLLAMA_HOST=http://localai:8080
       - TZ=Europe/Istanbul
     restart: unless-stopped
     depends_on:
-      - ollama
+      - localai
     deploy:
       resources:
         reservations:
@@ -25,43 +25,19 @@ services:
     networks:
       - ragollama_network
 
-  ollama:
-    image: ollama/ollama:latest
+  localai:
+    image: localai/localai:v2.7.0
     ports:
-      - "11435:11435"
+      - "8080:8080"
     volumes:
-      - ollama_data:/root/.ollama
+      - localai_data:/models
       - /usr/lib/ollama/cuda_v12:/usr/lib/ollama/cuda_v12
     environment:
       - CUDA_VISIBLE_DEVICES=0,1
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-      - OLLAMA_HOST=0.0.0.0:11435
-      - OLLAMA_MODELS=/root/.ollama
-      - OLLAMA_NUM_GPU_LAYERS=9999
-      - OLLAMA_FLASH_ATTENTION=1
-      - OLLAMA_BATCH_SIZE=8192
-      - OLLAMA_GPUMEMORY=24564MB
-      - OLLAMA_GPUSPLIT="12282,12282"
-      - OLLAMA_CONTEXT_LENGTH=131072
-      - GGML_CUDA_ENABLE_UNIFIED_MEMORY=1
-      - GGML_CUDA_FORCE_MMQ=1
-      - GGML_CUDA_FORCE_CUBLAS=1
-      - GGML_CUDA_MAX_DEVICES=2
-      - OLLAMA_ORIGINS=*
-      - OLLAMA_KEEP_ALIVE=5m
-      - OLLAMA_DEBUG=1
-      - OLLAMA_ACCELERATE=1
-      - OLLAMA_NOPRUNE=1
-      - OLLAMA_MAX_LOADED_MODELS=5
-      - OLLAMA_LOAD_TIMEOUT=0
-      - OLLAMA_NOHISTORY=0
-      - gpus=all
-      - OLLAMA_MODEL_PATH=/root/.ollama/models
-      - OLLAMA_MODEL_CACHE=/root/.ollama/cache
-      - OLLAMA_MODEL_TEMP=/root/.ollama/temp
-      - OLLAMA_MODEL_LOAD_MODE=direct
-      - OLLAMA_MODEL_LOAD_PREFERENCE=gpu
+      - DEBUG=1
+      - GPU_LAYERS=9999
       - CUDA_LAUNCH_BLOCKING=1
       - CUDA_MODULE_LOADING=LAZY
       - CUDA_AUTO_BOOST=0
@@ -69,9 +45,6 @@ services:
       - CUDA_CACHE_PATH=/tmp/cuda-cache
       - CUDA_CACHE_MAXSIZE=67108864
       - LD_LIBRARY_PATH=/usr/lib/ollama/cuda_v12:$LD_LIBRARY_PATH
-      - OLLAMA_LOG_LEVEL=debug
-      - OLLAMA_LOG_FORMAT=json
-      - OLLAMA_LOG_FILE=/root/.ollama/ollama.log
     deploy:
       resources:
         reservations:
@@ -88,6 +61,6 @@ networks:
     driver: bridge
 
 volumes:
-  ollama_data:
+  localai_data:
   cache_data:
   vector_store_data: 
