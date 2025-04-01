@@ -56,6 +56,11 @@ services:
       - OLLAMA_LOAD_TIMEOUT=0
       - OLLAMA_NOHISTORY=0
       - gpus=all
+      - OLLAMA_MODEL_PATH=/root/.ollama/models
+      - OLLAMA_MODEL_CACHE=/root/.ollama/cache
+      - OLLAMA_MODEL_TEMP=/root/.ollama/temp
+      - OLLAMA_MODEL_LOAD_MODE=direct
+      - OLLAMA_MODEL_LOAD_PREFERENCE=gpu
     deploy:
       resources:
         reservations:
