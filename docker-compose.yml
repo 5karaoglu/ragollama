@@ -32,7 +32,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     environment:
-      - CUDA_VISIBLE_DEVICES=0
+      - CUDA_VISIBLE_DEVICES=0,1
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
       - OLLAMA_HOST=0.0.0.0:11435
@@ -61,6 +61,12 @@ services:
       - OLLAMA_MODEL_TEMP=/root/.ollama/temp
       - OLLAMA_MODEL_LOAD_MODE=direct
       - OLLAMA_MODEL_LOAD_PREFERENCE=gpu
+      - CUDA_LAUNCH_BLOCKING=1
+      - CUDA_MODULE_LOADING=LAZY
+      - CUDA_AUTO_BOOST=0
+      - CUDA_DEVICE_MAX_CONNECTIONS=1
+      - CUDA_CACHE_PATH=/tmp/cuda-cache
+      - CUDA_CACHE_MAXSIZE=67108864
     deploy:
       resources:
         reservations:
