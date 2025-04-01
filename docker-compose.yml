@@ -46,14 +46,10 @@ services:
       - GGML_CUDA_ENABLE_UNIFIED_MEMORY=1
       - GGML_CUDA_FORCE_MMQ=1
       - GGML_CUDA_FORCE_CUBLAS=1
-      - GGML_CUDA_DMMV_X=32
-      - GGML_CUDA_DMMV_Y=32
       - GGML_CUDA_MAX_DEVICES=2
       - GGML_CUDA_USE_PINNED=1
       - GGML_CUDA_USE_TENSOR_CORES=1
       - GGML_CUDA_PREFER_HOST=0
-      - GGML_CUDA_NO_PINNED=0
-      - GGML_CUDA_USE_VULKAN=0
       - OLLAMA_ORIGINS=*
       - OLLAMA_KEEP_ALIVE=5m
       - OLLAMA_DEBUG=1
@@ -63,12 +59,6 @@ services:
       - OLLAMA_LOAD_TIMEOUT=0
       - OLLAMA_NOHISTORY=0
       - gpus=all
-      - CUDA_LAUNCH_BLOCKING=1
-      - CUDA_CACHE_PATH=/tmp/cuda-cache
-      - CUDA_CACHE_MAXSIZE=67108864
-      - CUDA_MODULE_LOADING=LAZY
-      - CUDA_AUTO_BOOST=0
-      - CUDA_DEVICE_MAX_CONNECTIONS=1
     deploy:
       resources:
         reservations:
