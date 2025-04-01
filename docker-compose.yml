@@ -31,6 +31,7 @@ services:
       - "11435:11435"
     volumes:
       - ollama_data:/root/.ollama
+      - /usr/lib/ollama/cuda_v12:/usr/lib/ollama/cuda_v12
     environment:
       - CUDA_VISIBLE_DEVICES=0,1
       - NVIDIA_VISIBLE_DEVICES=all
@@ -67,6 +68,7 @@ services:
       - CUDA_DEVICE_MAX_CONNECTIONS=1
       - CUDA_CACHE_PATH=/tmp/cuda-cache
       - CUDA_CACHE_MAXSIZE=67108864
+      - LD_LIBRARY_PATH=/usr/lib/ollama/cuda_v12:$LD_LIBRARY_PATH
     deploy:
       resources:
         reservations:
